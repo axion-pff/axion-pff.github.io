@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axion — Fracture module</title>
+<meta name="description" content="The Axion phase-field fracture module: AT2 and PF-CZM models sharing one element definition. Verified on 2D and 3D benchmarks and applied to hydraulic fracture, a premolar tooth and the Koyna gravity dam.">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <a class="brand" href="index.html"><span class="logo">AX</span> Axion</a>
+  <button class="burger" id="burger" aria-label="Menu">☰</button>
+  <div class="links" id="navlinks">
+    <a href="index.html">Home</a>
+    <a href="fracture.html" class="active">Fracture</a>
+    <a href="models.html">Roadmap</a>
+    <a href="community.html">Community</a>
+    <a href="team.html">Team</a>
+  </div>
+</nav>
+
+<!-- ===== PAGE HEADER ===== -->
+<header class="phead">
+  <h1>The fracture module</h1>
+  <p>Phase-field fracture with the AT2 and PF-CZM models sharing one element definition —
+     <span style="color:#fff">the first physics module</span> of Axion.</p>
+</header>
+
+<!-- ===== STATS ===== -->
+<section class="block">
+  <div class="wrap">
+    <p class="kicker">Module 01 · Available</p>
+    <h2>Phase-field fracture</h2>
+    <p class="sub">A demanding first test: fine resolution along an unknown crack path, bound-constrained
+      damage, and repeated nonlinear solves over a loading history.</p>
+    <div class="stats">
+      <div class="stat"><div class="num">37.9×</div><div class="lab">one GPU vs. serial FEniCSx on one CPU, 2D benchmark at identical discretization</div></div>
+      <div class="stat"><div class="num">9.6 × 10⁷</div><div class="lab">degrees of freedom on a single GPU — Koyna gravity dam, uniform mesh</div></div>
+      <div class="stat"><div class="num">92% · 96%</div><div class="lab">strong- and weak-scaling efficiency on four GPUs</div></div>
+    </div>
+    <div class="grid g3">
+      <div class="card"><h3>AT2</h3><p>α(d) = d², ω(d) = (1 − d)². Brittle fracture without an elastic threshold. The history-driven damage subproblem is linear and symmetric positive definite: one Newton step with CG, followed by a projection onto [0, 1].</p></div>
+      <div class="card"><h3>PF-CZM</h3><p>α(d) = 2d − d² with a rational degradation function calibrated to a traction–separation law. Brittle and cohesive fracture with a finite elastic threshold, insensitive to the length scale. Its non-convex damage subproblem is solved by a projected Jacobi iteration.</p></div>
+      <div class="card"><h3>Hydro-poroelastic extension</h3><p>Pore pressure enters as a third field. The residuals are written once as weak forms; every block of the tangent, including the derivatives of the phase-field-dependent fluid properties, follows from automatic differentiation.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BENCHMARK ===== -->
+<section class="block alt">
+  <div class="wrap">
+    <p class="kicker">Module 01 · Verification</p>
+    <h2>Benchmark: single-edge-notched tension</h2>
+    <p class="sub">The canonical mode-I benchmark in two and three dimensions, AT2 model.</p>
+    <figure>
+      <img src="assets/sent_benchmark.png" alt="Single-edge-notched tension in two and three dimensions: geometry, force-displacement response, damage field and mesh">
+      <figcaption>Top row, two dimensions: geometry and loading, force–displacement response of Axion and
+        FEniCSx on uniform and adaptive meshes, final damage field, and the adaptively refined mesh.
+        Bottom row, three dimensions: geometry, force–displacement response, final damage field with a
+        straight crack front, and the uniform hexahedral mesh.</figcaption>
+    </figure>
+    <div class="grid g2" style="margin-top:22px">
+      <div class="pstate">
+        <h4>Two dimensions</h4>
+        <ul>
+          <li>Unit square (1 mm) with a pre-crack of length L/2, introduced as a geometric slit; clamped bottom edge, top edge displaced vertically, plane strain; ℓ = 0.03 mm.</li>
+          <li><strong>Uniform:</strong> 3.08 × 10⁴ DoFs, bilinear quadrilaterals at h = ℓ/3, 700 increments of 10⁻⁵ mm; peak load 680.4 N/mm.</li>
+          <li><strong>Adaptive:</strong> starts from 48 × 48 cells and refines around the evolving crack inside the compiled program, down to h ≈ ℓ/5.8; 11 334 DoFs at the end; 70 increments of 10⁻⁴ mm; peak load 714.9 N/mm.</li>
+          <li>The curves lie close together; the larger increments of the adaptive run account for the difference at the peak.</li>
+        </ul>
+      </div>
+      <div class="pstate">
+        <h4>Three dimensions</h4>
+        <ul>
+          <li>Slab of 1 mm × 1 mm × 0.2 mm with a through-thickness pre-crack; ℓ = 0.0313 mm; top face displaced in 160 increments of 5 × 10⁻⁵ mm.</li>
+          <li>150 × 150 × 15 trilinear hexahedra (h = 1/150 mm ≈ ℓ/4.7), 366 016 nodes, 1.46 × 10⁶ DoFs; hybrid formulation.</li>
+          <li>Peak load 126.6 N against 127.4 N for the adaptive FEniCSx reference — a difference of 0.63%.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TIMINGS ===== -->
+<section class="block">
+  <div class="wrap">
+    <p class="kicker">Module 01 · Performance</p>
+    <h2>Problem sizes and wall-clock times</h2>
+    <p class="sub">Full loading history of every example. Double precision, NVIDIA RTX Pro 6000 Blackwell GPU;
+      CPU reference: serial FEniCSx on an Apple M4 Max.</p>
+    <div class="tscroll">
+      <table class="bench">
+        <thead>
+          <tr>
+            <th>Example</th>
+            <th>DoF</th>
+            <th>FEniCSx (1 CPU)</th>
+            <th>Axion (1 GPU)</th>
+            <th>Time ratio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="model">2D mode I (AT2), uniform</td><td>3.08 × 10⁴</td><td>172.23 min</td><td>4.55 min</td><td class="gain">37.9×</td></tr>
+          <tr><td class="model">2D mode I (AT2), adaptive</td><td>1.13 × 10⁴</td><td>7.43 min</td><td>2.41 min</td><td class="gain">3.1×</td></tr>
+          <tr><td class="model">3D mode I (AT2)</td><td>1.46 × 10⁶</td><td>324.2 min</td><td>57.8 min</td><td class="gain">5.6×</td></tr>
+          <tr><td class="model">Hydraulic fracture</td><td>3.80 × 10⁵</td><td>–</td><td>97 min <sup>a</sup><br>319 min <sup>b</sup></td><td>–</td></tr>
+          <tr><td class="model">3D premolar (PF-CZM)</td><td>6.87 × 10⁵</td><td>–</td><td>335 min</td><td>–</td></tr>
+          <tr><td class="model">Koyna dam (AT2)</td><td>9.6 × 10⁷</td><td>–</td><td>390 min</td><td>–</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body" style="font-size:.86rem; margin-top:12px; color:var(--muted)">
+      <sup>a</sup> Two parallel notches, 50 time steps.
+      <sup>b</sup> Single vertical notch, 280 time steps.
+      The time ratio is a speedup at identical discretization only for the uniform two-dimensional case;
+      the other two rows compare different meshes, and in three dimensions Axion uses a looser
+      staggered tolerance (10⁻³ against 10⁻⁵).
+    </p>
+
+    <div class="grid g2" style="margin-top:28px">
+      <figure>
+        <img src="assets/scaling.png" alt="Strong and weak scaling on up to four GPUs">
+        <figcaption>Parallel scaling on the three-dimensional benchmark. Strong scaling at 1.46 × 10⁶ DoFs:
+          57.8 → 29.7 → 15.7 min on 1, 2 and 4 GPUs. Weak scaling at about 1.4 × 10⁶ DoFs per GPU:
+          57.8 → 60.1 min while the problem grows to 5.56 × 10⁶ DoFs. The predicted peak load is the
+          same in every run. The four GPUs are connected through PCIe.</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/derivative_verification.png" alt="Verification of the automatically differentiated derivatives">
+        <figcaption>Verification of the derivatives. Left: residual norm of Newton's method on the
+          displacement subproblem. Right: difference between the forward-mode derivative of the
+          reaction force with respect to G<sub>f</sub> and E<sub>0</sub> and a central difference; it
+          falls at second order and reaches below 10⁻⁹ when the linear systems are solved to 10⁻¹⁰.
+          The tests end before the peak load.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===== APPLICATIONS ===== -->
+<section class="block alt">
+  <div class="wrap">
+    <p class="kicker">Module 01 · Practical-scale problems</p>
+    <h2>Applications</h2>
+    <p class="sub">Three problems solved with the same solver and element kernels as the benchmarks.</p>
+
+    <!-- Hydraulic fracture -->
+    <h3 style="color:var(--primary)">💧 Hydraulic fracture in a poroelastic medium</h3>
+    <figure style="margin-bottom:18px">
+      <img src="assets/hydraulic_fracture.png" alt="Hydraulic fracture: two parallel notches under uniform stress and a single vertical notch under depth-varying stress">
+      <figcaption>Left: two parallel horizontal notches under a uniform remote stress of 0.5 MPa; the two
+        fractures deflect outward by stress shadowing. Right: a single vertical notch under gravity and a
+        horizontal confinement that grows with depth; the upper tip grows first, the lower tip later.</figcaption>
+    </figure>
+    <div class="pstate" style="margin-bottom:44px">
+      <h4>Problem statement</h4>
+      <ul>
+        <li><strong>Formulation:</strong> displacement, phase field and pore pressure, after Zhou, Zhuang and Rabczuk; the fluid properties follow the phase field, so the crack acts as a high-conductivity channel.</li>
+        <li><strong>Setup:</strong> square domain of side 10 m, notches of length 0.8 m, injection at 10 kg/(m³ s), zero pressure on the outer boundary, time increment 0.05 s.</li>
+        <li><strong>Mesh:</strong> unstructured triangulation generated on one quadrant and reflected about both axes — 188 968 linear triangles, 3.80 × 10⁵ DoFs.</li>
+        <li><strong>Symmetry:</strong> in the two-notch case the fields are projected onto the symmetric subspace at every staggered iteration; without this, the computation follows an asymmetric branch.</li>
+        <li><strong>Response:</strong> breakdown pressure of 8.06 MPa at t = 1.35 s (two notches) and 9.73 MPa at t = 3.1 s (single notch); on average 115 and 97 staggered iterations per time step.</li>
+        <li><strong>Cost:</strong> 1.62 h for the two-notch case and 5.32 h for the varying-stress case on a single GPU.</li>
+      </ul>
+    </div>
+
+    <!-- Premolar -->
+    <h3 style="color:var(--primary)">🦷 Three-dimensional premolar under occlusal loading</h3>
+    <figure style="margin-bottom:18px">
+      <img src="assets/premolar.png" alt="Premolar: geometry and constituents, crack initiation at the central fissure, and crack growth through the crown">
+      <figcaption>Geometry, constituents and loading; crack initiation at the floor of the central fissure;
+        the crack after it has propagated through the enamel into the dentin; and its descent on an
+        approximal face of the crown as the sphere is lowered.</figcaption>
+    </figure>
+    <div class="pstate" style="margin-bottom:44px">
+      <h4>Problem statement</h4>
+      <ul>
+        <li><strong>Constituents:</strong> enamel, dentin, pulp, periodontal ligament, cancellous and cortical bone — stiffnesses spanning more than four orders of magnitude, entering only as material data at the quadrature points.</li>
+        <li><strong>Loading:</strong> a rigid sphere of 4 mm diameter driven into the occlusal fissure; frictionless unilateral contact whose tangent is obtained by automatic differentiation.</li>
+        <li><strong>Model:</strong> PF-CZM with linear softening and ℓ = 0.25 mm, driven by the largest principal effective stress; fracture is admitted in the enamel and dentin of the crown. No notch or initial defect — the crack nucleates by itself.</li>
+        <li><strong>Mesh:</strong> conforming linear tetrahedra, h = 0.125 mm in the crown; 6.87 × 10⁵ DoFs; 5.59 h on a single GPU.</li>
+        <li><strong>Response:</strong> the indenter force peaks at 668 N at δ = 0.164 mm. The damage iteration reaches its cap during crack propagation, so the crack path is a qualitative result.</li>
+      </ul>
+    </div>
+
+    <!-- Koyna dam -->
+    <h3 style="color:var(--primary)">🏗️ The Koyna gravity dam</h3>
+    <figure style="margin-bottom:18px">
+      <img src="assets/koyna_dam.png" alt="Koyna gravity dam: geometry and loading, and the phase field as the overflow is raised">
+      <figcaption>Geometry and loading (dimensions in metres); a reference computation on a locally refined
+        mesh; the uniform mesh before propagation and at the end of loading; and the phase field at
+        overflows of 7, 8, 9 and 10 m.</figcaption>
+    </figure>
+    <div class="pstate">
+      <h4>Problem statement</h4>
+      <ul>
+        <li><strong>Structure:</strong> 103 m high, 70 m wide at the base; horizontal notch of 1.93 m on the upstream face; clamped base, plane strain.</li>
+        <li><strong>Loading:</strong> self-weight, hydrostatic pressure of a reservoir at 91.75 m, then an overflow raised to 10 m.</li>
+        <li><strong>Model:</strong> AT2, following Santillán et al.; ℓ = 0.03 m corresponds to a tensile strength of about 3.0 MPa.</li>
+        <li><strong>Scale separation:</strong> the damage band is set by ℓ = 0.03 m, more than three orders of magnitude smaller than the structure. Published analyses refine only around the expected crack path.</li>
+        <li><strong>Here:</strong> a uniform element size h = ℓ/2 = 0.015 m over the entire cross-section — 9.6 × 10⁷ DoFs, with no assumption about the crack path built into the mesh. 6.50 h on one GPU, 3.17 h on two.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site">
+  <p>Axion · Johns Hopkins University</p>
+</footer>
+
+<button id="totop" title="Back to top" aria-label="Back to top">↑</button>
+<script src="assets/site.js"></script>
+</body>
+</html>

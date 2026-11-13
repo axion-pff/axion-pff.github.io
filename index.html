@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axion — A differentiable, GPU-native finite element framework</title>
+<meta name="description" content="Axion: a differentiable, GPU-native finite element framework written in JAX. The complete nonlinear solution process, including load stepping, is compiled into a single program that runs on the GPU. Demonstrated on phase-field fracture.">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <a class="brand" href="index.html"><span class="logo">AX</span> Axion</a>
+  <button class="burger" id="burger" aria-label="Menu">☰</button>
+  <div class="links" id="navlinks">
+    <a href="index.html" class="active">Home</a>
+    <a href="fracture.html">Fracture</a>
+    <a href="models.html">Roadmap</a>
+    <a href="community.html">Community</a>
+    <a href="team.html">Team</a>
+  </div>
+</nav>
+
+<!-- ===== PAGE HEADER ===== -->
+<header class="phead">
+  <h1>Axion</h1>
+  <p><strong style="color:#fff">A</strong>utodifferentiable, <strong style="color:#fff">X</strong>LA-compiled,
+     <strong style="color:#fff">I</strong>mplicit, <strong style="color:#fff">O</strong>n-device
+     <strong style="color:#fff">N</strong>umerics</p>
+  <p style="margin-top:14px; color:#fff">A differentiable, GPU-native finite element framework written in JAX,
+     demonstrated on phase-field fracture.</p>
+</header>
+
+<!-- ===== WALL-CLOCK COMPARISON ===== -->
+<section id="game" class="block alt">
+  <div class="wrap">
+    <p class="kicker">One compiled program</p>
+    <h2>Same problem, same discretization</h2>
+    <p class="sub">The element kernels, the Newton and Krylov iterations, the bound-constrained updates, the
+      staggered coupling of fields and the loop over load increments are a single program, just-in-time
+      compiled and executed on the GPU. Below: two-dimensional single-edge-notched tension,
+      a serial FEniCSx implementation on one CPU vs. Axion on one GPU.</p>
+
+    <div class="race">
+      <div class="race-head">
+        <span class="t">Phase-field fracture · full loading history</span>
+        <span class="d">3.08 × 10⁴ DoFs · AT2 · 700 load increments</span>
+      </div>
+      <div class="lanes">
+        <div class="lane cpu">
+          <div class="label"><span>FEniCSx — CPU</span><span>serial · 1 CPU</span></div>
+          <canvas id="cv-cpu" width="460" height="200"></canvas>
+          <div class="meter"><span>wall-clock <span class="clock" id="clk-cpu">0 s</span></span><span class="status" id="st-cpu">solving…</span></div>
+        </div>
+        <div class="lane gpu">
+          <div class="label"><span>Axion — GPU</span><span>AD + vmap + XLA</span></div>
+          <canvas id="cv-gpu" width="460" height="200"></canvas>
+          <div class="meter"><span>wall-clock <span class="clock" id="clk-gpu">0 s</span></span><span class="status" id="st-gpu">solving…</span></div>
+        </div>
+      </div>
+      <div class="race-foot">
+        Axion completes the loading history in 4.55 min on one GPU; at that moment the serial FEniCSx
+        computation on one CPU has completed 2.6% of its 172 min run —
+        <span class="big">37.9×</span> faster at identical discretization.
+        <br><span style="font-size:.82rem">Double precision; NVIDIA RTX Pro 6000 Blackwell GPU and
+        Apple M4 Max CPU. Times include compilation. The two codes also differ in their linear
+        solvers, so the ratio reflects hardware, solver and implementation together.</span>
+      </div>
+    </div>
+
+    <p class="body" style="margin-top:30px">
+      Finite element analysis is increasingly used not only for forward simulation but also
+      within inverse analysis, uncertainty quantification, optimal design, digital twins and
+      scientific machine learning. These workflows evaluate the same model thousands of
+      times and need <em>derivatives</em> of the solution with respect to material
+      parameters, geometry, boundary conditions or constitutive laws. Axion is designed so
+      that finite element analysis and gradient-based learning use the same programming
+      model, compiler and hardware.
+    </p>
+  </div>
+</section>
+
+<!-- ===== ARCHITECTURE ===== -->
+<section id="jax" class="block">
+  <div class="wrap">
+    <p class="kicker">How it works</p>
+    <h2>The solution process as a single compiled program</h2>
+    <p class="sub">The user supplies the weak form of each field; Axion generates everything else.</p>
+    <p class="body">
+      Axion is written in <a href="https://github.com/jax-ml/jax">JAX</a>, which provides
+      automatic differentiation, vectorized mapping (<code>vmap</code>) and just-in-time
+      compilation through the XLA compiler. A coupled problem is a set of fields. For each
+      field the user writes an element-level weak-form kernel; the residual evaluation, the
+      tangent construction, the linear solution, the treatment of constraints and the
+      solution control are generated from it.
+    </p>
+    <figure style="margin-top:22px">
+      <img src="assets/overview.png" alt="Overview of Axion: one element kernel per field with its tangent by forward-mode automatic differentiation, the solution loops compiled into one GPU program, and the phase-field fracture problems solved with it">
+      <figcaption>Overview of Axion. Top: each field is defined by one element kernel, whose
+        tangent follows by forward-mode automatic differentiation; the load, staggered, Newton
+        and CG loops are compiled into one GPU program that also runs on several GPUs.
+        Bottom: the phase-field fracture problems solved in this work.</figcaption>
+    </figure>
+    <div class="grid g3" style="margin-top:28px">
+      <div class="card"><div class="ic">∇</div><h3>One element definition per field</h3><p>The element residual and its consistent tangent come from the same kernel: the tangent columns are forward-mode Jacobian-vector products. No hand-derived tangents.</p></div>
+      <div class="card"><div class="ic">▦</div><h3>Fixed array shapes</h3><p>Operators are applied element by element without assembling a sparse matrix; refined meshes live in fixed-capacity buffers and bounds are enforced by projection.</p></div>
+      <div class="card"><div class="ic">⚡</div><h3>Compiled control flow</h3><p>Load increments are a compiled scan; the staggered, Newton and Krylov iterations are compiled while-loops. The host is involved only before and after the simulation.</p></div>
+    </div>
+    <div class="grid g3" style="margin-top:18px">
+      <div class="card"><div class="ic">🧮</div><h3>Differentiable solution map</h3><p>Forward-mode derivatives of the discrete solution with respect to model parameters are obtained by differentiating the same program, with each nonlinear solve differentiated implicitly at its converged state. They agree with central differences to below 10⁻⁹.</p></div>
+      <div class="card"><div class="ic">🌲</div><h3>Adaptive refinement</h3><p>Quadtree / octree refinement with 2:1 balance and hanging-node constraints, executed on the device; kernels recompile only when a buffer capacity is exceeded.</p></div>
+      <div class="card"><div class="ic">🖥️</div><h3>Multi-GPU execution</h3><p>A cell-based domain decomposition runs the same program on several GPUs, with halo exchange and global reductions inside the Krylov solver.</p></div>
+    </div>
+    <figure style="margin-top:28px">
+      <img src="assets/architecture.png" alt="Architecture of Axion: weak-form kernels are compiled, together with the nested solution loops, into a single XLA program">
+      <figcaption>Architecture of Axion. The weak-form kernels, the element tangents obtained by
+        forward-mode automatic differentiation, the operator action and the nested solution
+        loops are compiled into a single XLA program that runs on one or several GPUs.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ===== WHERE TO GO NEXT ===== -->
+<section class="block alt">
+  <div class="wrap">
+    <p class="kicker">Explore</p>
+    <h2>Where to go next</h2>
+    <p class="sub">One differentiable core; phase-field fracture is its first physics module.</p>
+    <div class="grid g3">
+      <a class="card" href="fracture.html" style="color:inherit">
+        <div class="ic">🧩</div><h3>Fracture module →</h3>
+        <p>AT2 and PF-CZM models, verified on 2D and 3D benchmarks and applied to hydraulic fracture, a premolar tooth and a 103 m gravity dam.</p>
+      </a>
+      <a class="card" href="models.html" style="color:inherit">
+        <div class="ic">🔭</div><h3>Roadmap →</h3>
+        <p>What is available now and the next steps: reverse-mode derivatives, scalable preconditioning and hybrid AI–physics workflows.</p>
+      </a>
+      <a class="card" href="team.html" style="color:inherit">
+        <div class="ic">👥</div><h3>The team →</h3>
+        <p>Meet the people behind Axion at Johns Hopkins University, and get in touch.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PAPER & CITATION ===== -->
+<section id="cite" class="block">
+  <div class="wrap">
+    <p class="kicker">Reference</p>
+    <h2>Paper &amp; citation</h2>
+    <p class="sub">Preprint coming soon.</p>
+    <div class="linkrow">
+      <!-- set these to the preprint and to the repository once they are public -->
+      <a class="btn primary" href="#cite">📄 Paper — coming soon</a>
+      <a class="btn" href="https://github.com/Centrum-IntelliPhysics/AXION">View on GitHub</a>
+    </div>
+    <p class="sub" style="margin-bottom:10px">If Axion supports your research, please cite:</p>
+    <pre><code>@article{axion,
+  title  = {Axion: A differentiable, GPU-native finite element framework,
+            demonstrated on phase-field fracture},
+  author = {Wang, Wei and Krishnan U., Meenu and
+            Graham-Brady, Lori and Goswami, Somdatta},
+  note   = {W. Wang and M. Krishnan U. contributed equally},
+  year   = {2026}
+}</code></pre>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site">
+  <p>Axion · Johns Hopkins University</p>
+</footer>
+
+<button id="totop" title="Back to top" aria-label="Back to top">↑</button>
+<script src="assets/site.js"></script>
+</body>
+</html>

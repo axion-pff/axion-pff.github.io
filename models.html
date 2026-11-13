@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axion — Models &amp; roadmap</title>
+<meta name="description" content="Axion is a differentiable, GPU-native finite element framework. Phase-field fracture is its first physics module; reverse-mode derivatives, scalable preconditioning and hybrid AI-physics workflows are the next steps.">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <a class="brand" href="index.html"><span class="logo">AX</span> Axion</a>
+  <button class="burger" id="burger" aria-label="Menu">☰</button>
+  <div class="links" id="navlinks">
+    <a href="index.html">Home</a>
+    <a href="fracture.html">Fracture</a>
+    <a href="models.html" class="active">Roadmap</a>
+    <a href="community.html">Community</a>
+    <a href="team.html">Team</a>
+  </div>
+</nav>
+
+<!-- ===== PAGE HEADER ===== -->
+<header class="phead">
+  <h1>Models &amp; roadmap</h1>
+  <p>The framework is independent of any particular physical system: element kernels,
+     automatically generated tangents, solvers and solution control. Fracture is the first module.</p>
+</header>
+
+<!-- ===== AVAILABLE ===== -->
+<section class="block">
+  <div class="wrap">
+    <p class="kicker">Available now</p>
+    <h2>Module 01 — Phase-field fracture</h2>
+    <p class="sub">Verified on benchmarks, measured, and applied at scale.</p>
+    <div class="module">
+      <div class="num">MODULE 01</div>
+      <span class="pill live">AVAILABLE</span>
+      <h3>Phase-field fracture</h3>
+      <p>
+        The <strong>AT2</strong> and <strong>PF-CZM</strong> models share one element
+        definition. Staggered displacement–damage solves, bound-constrained damage, the
+        spectral tension–compression split, element-by-element Jacobi-preconditioned
+        conjugate gradients, refinement within fixed-size arrays and a multi-GPU cell
+        decomposition — verified on two- and three-dimensional benchmarks and applied to
+        hydraulic fracture in a poroelastic medium, a premolar under contact loading and a
+        concrete gravity dam.
+      </p>
+      <p style="margin-top:12px"><a href="fracture.html">Open the fracture module →</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== NEXT STEPS ===== -->
+<section class="block alt">
+  <div class="wrap">
+    <p class="kicker">Next steps</p>
+    <h2>Where the framework is going</h2>
+    <p class="sub">Directions that follow from the limitations of the present implementation.</p>
+    <div class="grid g3">
+      <div class="module ghost">
+        <div class="num">DERIVATIVES</div><span class="pill soon">NEXT</span>
+        <h3>Reverse-mode derivatives</h3>
+        <p>Forward-mode derivatives are available today. Implicit differentiation of each converged increment would provide reverse-mode derivatives for inverse identification, optimization and uncertainty quantification.</p>
+      </div>
+      <div class="module ghost">
+        <div class="num">SOLVERS</div><span class="pill soon">NEXT</span>
+        <h3>Scalable preconditioning</h3>
+        <p>Linear systems are solved by Jacobi-preconditioned conjugate gradients, whose iteration count grows with mesh refinement. A scalable preconditioner such as multigrid would allow finer meshes and larger device counts.</p>
+      </div>
+      <div class="module ghost">
+        <div class="num">DAMAGE SOLVER</div><span class="pill soon">NEXT</span>
+        <h3>Convergent PF-CZM damage solves</h3>
+        <p>The projected Jacobi iteration for the non-convex PF-CZM damage subproblem can stall during crack propagation. A solver for indefinite, bound-constrained problems, such as a primal–dual active-set method, would make such results quantitative.</p>
+      </div>
+      <div class="module ghost">
+        <div class="num">ADAPTIVITY</div><span class="pill soon">NEXT</span>
+        <h3>Adaptive refinement on several GPUs</h3>
+        <p>The octree refinement addresses box-shaped domains, refines without coarsening and runs on one device. Combining it with the multi-GPU decomposition is the next step.</p>
+      </div>
+      <div class="module ghost">
+        <div class="num">AI × PHYSICS</div><span class="pill soon">NEXT</span>
+        <h3>Training data for AI</h3>
+        <p>High-fidelity solutions at moderate cost make the solver a source of training data for neural operators and other surrogate models.</p>
+      </div>
+    </div>
+    <p class="body" style="margin-top:26px; text-align:center; color:var(--muted)">
+      Interested in a module for your problem? <a href="community.html">Reach out via the community portal →</a>
+    </p>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="site">
+  <p>Axion · Johns Hopkins University</p>
+</footer>
+
+<button id="totop" title="Back to top" aria-label="Back to top">↑</button>
+<script src="assets/site.js"></script>
+</body>
+</html>
